@@ -1,5 +1,8 @@
+(in-package :cl-user)
+
 (defpackage :asdf-viewer
-  (:use :cl :capi :asdf))
+  (:use :cl :asdf :capi)
+  (:shadowing-import-from :capi #:component-name))
 
 (in-package :asdf-viewer)
 
