@@ -19,7 +19,7 @@
   (unless sys (return-from sys-deps))
   (append (when (slot-boundp sys 'defsystem-depends-on)
             (mapcar (lambda (sys)
-                      (string-upcase (component-name sys)))
+                      (string-upcase (component-name (find-system sys))))
                     (system-defsystem-depends-on (find-system sys))))
           (system-depends-on sys)))
 
