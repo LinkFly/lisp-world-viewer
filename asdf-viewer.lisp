@@ -2,13 +2,10 @@
 
 (defpackage :asdf-viewer
   (:use :cl :asdf :capi)
-  (:shadowing-import-from :capi #:component-name))
+  (:shadowing-import-from :asdf #:component-name)
+  (:import-from :asdf #:defsystem-depends-on #:system-defsystem-depends-on))
 
 (in-package :asdf-viewer)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(export (find-symbol "SYSTEM-DEFSYSTEM-DEPENDS-ON" :asdf) :asdf)
-(export (find-symbol "DEFSYSTEM-DEPENDS-ON" :asdf) :asdf)
 
 (defmethod system-depends-on ((sys system))
   (mapcar #'coerce-name (rest (second (component-depends-on 'load-op sys)))))
