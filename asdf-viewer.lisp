@@ -78,10 +78,22 @@
 (defun system-as-keyword (system-designator)
   (intern (string-upcase (asdf:coerce-name system-designator)) :keyword))
 
-(defun go-to-definition (sys)
+#|(defun go-to-definition (sys)
+;(capi:apply-in-pane-process ed 'capi:call-editor ed 'editor:forward-character-command)
  (editor:find-source-command
   (capi:find-interface 'lispworks-tools:editor)
   (system-as-keyword sys)))
+|#
+
+(defun go-to-definition (sys &aux ed)
+;(capi:apply-in-pane-process ed 'capi:call-editor ed 'editor:forward-character-command)
+  (setf ed (capi:find-interface 'lispworks-tools:editor))
+  (capi:apply-in-pane-process ed
+                              'capi:call-editor
+                              ed
+                              (list 'editor:find-source-command ed (system-as-keyword sys)))
+  (capi:apply-in-pane-process ed 'editor:hl-off-command))
+;(go-to-definition :alexandria)
 ;;;;;;;;;;;;;;;;;;;;;;
 
 ;(defun open-asd-file (sys)
@@ -96,7 +108,7 @@
 (contain 
  (make-instance 'tree-view
                 :title "ASDF-systems and their dependencies"
-                :roots (get-all-systems)
+                :roots (sort (get-all-systems) #'string-lessp)
                 :children-function 'sys-deps
                 :action-callback #'show-system-callback
                 ))
@@ -106,9 +118,8 @@
 (contain 
  (make-instance 'tree-view
                 :title "ASDF-systems depends on"
-                :roots (get-all-systems :as-systems t)
+                :roots (sort (get-all-systems :as-systems t) #'string-lessp :key #'asdf:coerce-name)
                 :print-function #'coerce-name
                 :children-function 'sys-reverse-deps 
                 :action-callback #'show-system-callback
                 ))
-1111

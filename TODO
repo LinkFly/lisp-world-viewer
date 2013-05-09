@@ -1,0 +1,1 @@
+1) Поменять prepare-asdf.lisp на patch-defsystem.lisp
