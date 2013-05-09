@@ -1,3 +1,6 @@
+(in-package :cl-user)
+(defparameter +this-sys+ :prepare-asdf)
+(defparameter *file-loaded* nil)
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;; Preparing code ;;;;;;;;;;;;;;;;;;;;;;
 (defmacro empty-keyword-fn (keyword &optional (closure-value nil closure-value-p))
@@ -17,6 +20,7 @@
 ;(empty-keyword-fn :asdf)
 ;(:asdf)
 ;(symbol-function :asdf)
+
 
 (defun system-as-keyword (system-designator)
   (intern (string-upcase (asdf:coerce-name system-designator)) :keyword))
@@ -50,10 +54,47 @@
 (setf (macro-function 'asdf:defsystem) (macro-function 'new-defsystem))
 ;(setf (macro-function 'asdf:defsystem) (macro-function 'old-defsystem))
 
+(dspec:define-form-parser asdf:defsystem (name &rest body)
+  `(defun ,(system-as-keyword name)))
+
+;;;;;;;;; Redefining (for finding) this ASDF-system ;;;;;;;;
+(unless *file-loaded*
+  (setf *file-loaded* t)
+  (load (asdf:system-source-file +this-sys+)))
+;;;;;;;;;;;;;;;;;;;;;;;;;
+
+#|
 (dspec:define-form-parser 
     (asdf:defsystem
         (:parser 
          #.(dspec:get-form-parser 'defun))))
+|#
+;;;;;;;;;; experements ;;;;;;;;;;;;;;;;;
+#|
+(defmacro mydefsystem (name &body body)
+  (setf name (system-as-keyword name))
+  (eval `(empty-keyword-fn ,name))
+  `(old-defsystem ,name
+     ,@body))
+ 
+(dspec:define-form-parser mydefsystem (name &rest body)
+  `(defun ,(system-as-keyword name)))
+
+(mydefsys #:myexp7 :components ((:file "file")))
+
+:myexp7
+|#
+
+;(editor:goto-buffer (editor:current-buffer) t)
+;(defun 
+;(capi:apply-in-pane-process ed 'capi:call-editor ed "Beginning Of Buffer")
+;(capi:apply-in-pane-process ed 'capi:call-editor ed
+;                            (list 'editor:forward-character-command
+;                                  (slot-value pt 'editor::offset)  ))
+
+;(when set-foreground-window 
+;    (win32:set-foreground-window (window-handle-by-buffer buffer)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;(macroexpand-1 '(asdf:defsystem :exp :components ((:file "file"))))
 ;(asdf:defsystem :exp :components ((:file "file")))
 ;(asdf:defsystem :exp2 :components ((:file "file")))
@@ -63,3 +104,4 @@
 ;(:exp)
 ;(editor:find-source-command ed :exp)
 ;(editor:find-source-command (capi:find-interface 'lispworks-tools:editor) :exp3)
+
