@@ -119,3 +119,67 @@
 |#
 
 
+#| From prepare-asdf.lisp
+(defmacro empty-keyword-fn (keyword &optional (closure-value nil closure-value-p))
+  (the keyword keyword)
+  `(handler-bind ((simple-error (lambda (condition) 
+                                    (let ((restart (find-restart 'continue condition)))
+                                      (when restart (invoke-restart restart))))))
+       ,(if closure-value-p
+            `(progn 
+               (defun ,keyword () ,closure-value)
+               (,keyword))
+          `(defun ,keyword () 
+             (empty-keyword-fn ,keyword (asdf:find-system ,keyword))
+             ))))
+
+;(macroexpand-1 '(empty-keyword-fn :asdf))
+;(empty-keyword-fn :asdf)
+;(:asdf)
+;(symbol-function :asdf)
+
+
+#|
+(dspec:define-form-parser 
+    (asdf:defsystem
+        (:parser 
+         #.(dspec:get-form-parser 'defun))))
+|#
+;;;;;;;;;; experements ;;;;;;;;;;;;;;;;;
+#|
+(defmacro mydefsystem (name &body body)
+  (setf name (system-as-keyword name))
+  (eval `(empty-keyword-fn ,name))
+  `(old-defsystem ,name
+     ,@body))
+ 
+(dspec:define-form-parser mydefsystem (name &rest body)
+  `(defun ,(system-as-keyword name)))
+
+(mydefsys #:myexp7 :components ((:file "file")))
+
+:myexp7
+|#
+
+;(editor:goto-buffer (editor:current-buffer) t)
+;(defun 
+;(capi:apply-in-pane-process ed 'capi:call-editor ed "Beginning Of Buffer")
+;(capi:apply-in-pane-process ed 'capi:call-editor ed
+;                            (list 'editor:forward-character-command
+;                                  (slot-value pt 'editor::offset)  ))
+
+;(when set-foreground-window 
+;    (win32:set-foreground-window (window-handle-by-buffer buffer)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;(macroexpand-1 '(asdf:defsystem :exp :components ((:file "file"))))
+;(asdf:defsystem :exp :components ((:file "file")))
+;(asdf:defsystem :exp2 :components ((:file "file")))
+;:exp 
+;:exp2
+;:exp3
+;(:exp)
+;(editor:find-source-command ed :exp)
+;(editor:find-source-command (capi:find-interface 'lispworks-tools:editor) :exp3)
+
+;;;;;;;;;;;;;;;;;;;;
+|#
