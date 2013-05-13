@@ -118,7 +118,7 @@
 (defun gen-callback-select-also (tree-pane1 tree-pane2 &aux tree1 tree2)
   (lambda (element interface &aux cur-desc sys)
 ;;;;;;;; Show details ;;;;;;;;;
-    (setf sys (find-system element))
+    (setf sys (find-system (string-downcase (coerce-name element))))
     (setf cur-desc (handler-case (system-description (find-system sys))
                      (unbound-slot () "")))
     (setf (display-pane-text (slot-value interface 'details-description)) cur-desc)
@@ -174,6 +174,8 @@
     (display (setf *lisp-world-viewer-window* (make-instance 'lisp-world-viewer))))
   ;(define-lisp-world-viewer-and-show)
   )
+
+
 
 
 
