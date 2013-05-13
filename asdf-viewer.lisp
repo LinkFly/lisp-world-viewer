@@ -3,9 +3,13 @@
 (defpackage :asdf-viewer
   (:use :cl :asdf :capi)
   (:shadowing-import-from :asdf #:component-name)
-  (:import-from :asdf #:defsystem-depends-on #:system-defsystem-depends-on #:missing-requires))
+  (:import-from :asdf #:defsystem-depends-on #:system-defsystem-depends-on #:missing-requires #:coerce-name)
+  (:export #:define-lisp-world-viewer-and-show)
+  )
 
 (in-package :asdf-viewer)
+
+(defparameter *lisp-world-viewer-window* nil) 
 
 (defparameter *reverse-deps-hash* (make-hash-table)) ;;filling of fill-reverse-deps-hash function
 
@@ -112,39 +116,65 @@
   (position (coerce-name element) (tree-view-roots tree) :test #'string-equal :key #'coerce-name))
 
 (defun gen-callback-select-also (tree-pane1 tree-pane2 &aux tree1 tree2)
-  (lambda (element interface)
+  (lambda (element interface &aux cur-desc sys)
+;;;;;;;; Show details ;;;;;;;;;
+    (setf sys (find-system element))
+    (setf cur-desc (handler-case (system-description (find-system sys))
+                     (unbound-slot () "")))
+    (setf (display-pane-text (slot-value interface 'details-description)) cur-desc)
+    (setf cur-desc (handler-case (system-long-description (find-system sys))
+                     (unbound-slot () "")))
+    (setf (display-pane-text (slot-value interface 'details-long-description)) cur-desc)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
     (setf tree1 (slot-value interface tree-pane1))
     (setf tree2 (slot-value interface tree-pane2))
     (setf (choice-selection tree2) (get-item-position (choice-selected-item tree1) tree1))
     ))
 
+(progn
+  (defun define-lisp-world-viewer-and-show ()
+    (define-interface lisp-world-viewer ()
+      ()
+      (:panes
+       (sys-deps tree-view
+                 :title "ASDF-systems dependencies"
+                 :roots (get-dependencies-roots)
+                 :children-function 'sys-deps
+                 :action-callback #'show-system-callback
+                 :selection-callback (gen-callback-select-also 'sys-deps 'sys-req-for)
+                 )
+       (sys-req-for tree-view
+                    :title "ASDF-systems required for"
+                    :roots (get-required-for-roots)
+                    :print-function #'coerce-name
+                    :children-function 'sys-reverse-deps 
+                    :action-callback #'show-system-callback
+                    :selection-callback (gen-callback-select-also 'sys-req-for 'sys-deps)
+                    )
+       (details-description display-pane
+                            :title "Description:"
+                            :title-position :left
+                            )
+       (details-long-description display-pane
+                            :title "Long description:"
+                            :title-position :left
+                            )
 
-(define-interface lisp-world-viewer ()
-  ()
-  (:panes
-   (sys-deps tree-view
-             :title "ASDF-systems dependencies"
-             :roots (get-dependencies-roots)
-             :children-function 'sys-deps
-             :action-callback #'show-system-callback
-             :selection-callback (gen-callback-select-also 'sys-deps 'sys-req-for)
-             )
-   (sys-req-for tree-view
-                :title "ASDF-systems required for"
-                :roots (get-required-for-roots)
-                :print-function #'coerce-name
-                :children-function 'sys-reverse-deps 
-                :action-callback #'show-system-callback
-                :selection-callback (gen-callback-select-also 'sys-req-for 'sys-deps)
-                ))
-  (:layouts
-   (row-asdf-deps row-layout '(sys-deps sys-req-for)))
-  (:default-initargs :title "ASDF-systems"
-   :visible-min-width 800
-   :visible-min-height 600
-   ))
+       )
+      (:layouts
+       (col-deps-details column-layout '(row-asdf-deps details-layout))
+       (row-asdf-deps row-layout '(sys-deps sys-req-for))
+       (details-layout column-layout '(details-description details-long-description))
 
-(display (make-instance 'lisp-world-viewer))
+       )
+      (:default-initargs :title "ASDF-systems"
+       :visible-min-width 800
+       :visible-min-height 600
+       ))
+    (display (setf *lisp-world-viewer-window* (make-instance 'lisp-world-viewer))))
+  ;(define-lisp-world-viewer-and-show)
+  )
+
 
 
    
