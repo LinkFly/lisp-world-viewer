@@ -62,11 +62,6 @@
                                    cur-reverse-deps
                                  (append cur-reverse-deps (list sys))))))))
 
-;(system-depends-on :swank :as-systems t)
-
-;(defun hash-table-keys (ht)
-;  (loop :for key :being :the :hash-key :in ht :collect key))
-
 (defun sys-reverse-deps (sys &key (reverse-deps-hash *reverse-deps-hash*))
   (gethash (find-system-or-not-found sys) reverse-deps-hash))
 
@@ -97,30 +92,59 @@
 ;(go-to-definition :alexandria)
 ;;;;;;;;;;;;;;;;;;;;;;
 
-;(defun open-asd-file (sys)
-;  (goto-or-create-xy (system-source-file sys) 0 0))
-
 (defun show-system-callback (data interface)
   (declare (ignore interface))
-;  (open-asd-file data)
   (go-to-definition data)
   )
 
-(contain 
- (make-instance 'tree-view
-                :title "ASDF-systems and their dependencies"
-                :roots (sort (get-all-systems) #'string-lessp)
-                :children-function 'sys-deps
-                :action-callback #'show-system-callback
-                ))
+(defun get-dependencies-roots ()
+  (sort (get-all-systems) #'string-lessp))
 
-(fill-reverse-deps-hash)
+(defun get-required-for-roots ()
+  (progn
+    (fill-reverse-deps-hash)
+    (sort (get-all-systems :as-systems t) #'string-lessp :key #'asdf:coerce-name)))
 
-(contain 
- (make-instance 'tree-view
-                :title "ASDF-systems depends on"
-                :roots (sort (get-all-systems :as-systems t) #'string-lessp :key #'asdf:coerce-name)
+(defun test-callback (&rest args)
+  (display-message "~S" args))
+
+(defun get-item-position (element tree)
+  (position (coerce-name element) (tree-view-roots tree) :test #'string-equal :key #'coerce-name))
+
+(defun gen-callback-select-also (tree-pane1 tree-pane2 &aux tree1 tree2)
+  (lambda (element interface)
+    (setf tree1 (slot-value interface tree-pane1))
+    (setf tree2 (slot-value interface tree-pane2))
+    (setf (choice-selection tree2) (get-item-position (choice-selected-item tree1) tree1))
+    ))
+
+
+(define-interface lisp-world-viewer ()
+  ()
+  (:panes
+   (sys-deps tree-view
+             :title "ASDF-systems dependencies"
+             :roots (get-dependencies-roots)
+             :children-function 'sys-deps
+             :action-callback #'show-system-callback
+             :selection-callback (gen-callback-select-also 'sys-deps 'sys-req-for)
+             )
+   (sys-req-for tree-view
+                :title "ASDF-systems required for"
+                :roots (get-required-for-roots)
                 :print-function #'coerce-name
                 :children-function 'sys-reverse-deps 
                 :action-callback #'show-system-callback
+                :selection-callback (gen-callback-select-also 'sys-req-for 'sys-deps)
                 ))
+  (:layouts
+   (row-asdf-deps row-layout '(sys-deps sys-req-for)))
+  (:default-initargs :title "ASDF-systems"
+   :visible-min-width 800
+   :visible-min-height 600
+   ))
+
+(display (make-instance 'lisp-world-viewer))
+
+
+   
