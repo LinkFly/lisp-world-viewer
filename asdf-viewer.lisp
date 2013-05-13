@@ -76,7 +76,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defun system-as-keyword (system-designator)
-  (intern (string-upcase (asdf:coerce-name system-designator)) :keyword))
+  (intern (string-upcase (coerce-name system-designator)) :keyword))
 
 #|(defun go-to-definition (sys)
 ;(capi:apply-in-pane-process ed 'capi:call-editor ed 'editor:forward-character-command)
@@ -107,7 +107,7 @@
 (defun get-required-for-roots ()
   (progn
     (fill-reverse-deps-hash)
-    (sort (get-all-systems :as-systems t) #'string-lessp :key #'asdf:coerce-name)))
+    (sort (get-all-systems :as-systems t) #'string-lessp :key #'coerce-name)))
 
 (defun test-callback (&rest args)
   (display-message "~S" args))
