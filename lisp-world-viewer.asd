@@ -1,5 +1,5 @@
 (asdf:defsystem :lisp-world-viewer
-  :depends-on (:alexandria)
+  :depends-on ()
   :components ((:file "asdf-viewer")
 
                )

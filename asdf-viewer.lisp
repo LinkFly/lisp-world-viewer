@@ -37,7 +37,7 @@
   (system-depends-on (find-system (coerce-name sys)) :as-systems as-systems :defsystem-depends-on defsystem-depends-on))
 
 (defun sys-deps (sys)
-  (setf sys (handler-case (find-system sys)
+  (setf sys (handler-case (find-system (string-downcase (coerce-name sys)))
               (missing-component () nil)))
   (unless sys (return-from sys-deps))
   (append (when (slot-boundp sys 'defsystem-depends-on)
@@ -175,8 +175,3 @@
   ;(define-lisp-world-viewer-and-show)
   )
 
-
-
-
-
-   
