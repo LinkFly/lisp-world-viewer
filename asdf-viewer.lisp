@@ -20,6 +20,7 @@
   (setf result (if (and defsystem-depends-on (slot-boundp sys 'defsystem-depends-on))
                    (system-defsystem-depends-on sys)
                  (rest (second (component-depends-on 'load-op sys)))))
+  (setf result (reverse result))
   (if as-systems
     (mapcar #'find-system-or-not-found result)
     (mapcar #'coerce-name result)))
