@@ -3,7 +3,7 @@
 (defparameter *prepare-asdf-file-loaded* nil)
 
 (defun system-as-keyword (system-designator)
-  (intern (string-upcase (asdf:coerce-name system-designator)) :keyword))
+  (intern (string-upcase (coerce-name system-designator)) :keyword))
 
 (setf (macro-function 'old-defsystem) (macro-function 'asdf:defsystem))
 
