@@ -23,3 +23,6 @@ CL-USER: (push <путь_к_директории_lisp-world-viewer> asdf:*centra
 CL-USER: (asdf:load-system :lisp-world-viewer)
 CL-USER: (asdf-viewer:define-lisp-world-viewer-and-show)
 ```
+
+Скриншоты:
+![Просмотр зависимостей ASDF-систем](doc/screenshots/asdf-viewer.png)
