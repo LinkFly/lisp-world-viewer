@@ -3,7 +3,7 @@
 (defpackage :asdf-viewer
   (:use :cl :asdf :capi)
   (:shadowing-import-from :asdf #:component-name)
-  (:import-from :asdf #:defsystem-depends-on #:system-defsystem-depends-on #:missing-requires #:coerce-name)
+  (:import-from :asdf #:defsystem-depends-on #:system-defsystem-depends-on #:missing-requires #:coerce-name)   
   (:export #:define-lisp-world-viewer-and-show)
   )
 
@@ -20,21 +20,23 @@
   (handler-case (find-system sys)
     (missing-component (condition) (make-not-found :system (missing-requires condition)))))
 
-(defmethod system-depends-on ((sys system) &key as-systems defsystem-depends-on &aux result)
+(defmethod get-system-depends-on ((sys system) &key as-systems defsystem-depends-on &aux result)
   (setf result (if (and defsystem-depends-on (slot-boundp sys 'defsystem-depends-on))
                    (system-defsystem-depends-on sys)
-                 (rest (second (component-depends-on 'load-op sys)))))
+                 (rest 
+                        ;(second (component-depends-on 'load-op sys))
+                  (system-depends-on sys))))
   (setf result (reverse result))
   (if as-systems
     (mapcar #'find-system-or-not-found result)
     (mapcar #'coerce-name result)))
 
-(defmethod system-depends-on ((not-found not-found) &key as-systems defsystem-depends-on &aux result)
+(defmethod get-system-depends-on ((not-found not-found) &key as-systems defsystem-depends-on &aux result)
   (declare (ignore not-found as-systems defsystem-depends-on result))
   nil)
 
-(defmethod system-depends-on ((sys t) &key as-systems defsystem-depends-on)
-  (system-depends-on (find-system (coerce-name sys)) :as-systems as-systems :defsystem-depends-on defsystem-depends-on))
+(defmethod get-system-depends-on ((sys t) &key as-systems defsystem-depends-on)
+  (get-system-depends-on (find-system (coerce-name sys)) :as-systems as-systems :defsystem-depends-on defsystem-depends-on))
 
 (defun sys-deps (sys)
   (setf sys (handler-case (find-system (string-downcase (coerce-name sys)))
@@ -42,8 +44,8 @@
   (unless sys (return-from sys-deps))
   (append (when (slot-boundp sys 'defsystem-depends-on)
             (mapcar #'string-upcase
-                    (system-depends-on (find-system sys) :defsystem-depends-on t)))
-          (system-depends-on sys)))
+                    (get-system-depends-on (find-system sys) :defsystem-depends-on t)))
+          (get-system-depends-on sys)))
 
 (defun get-all-systems (&key as-systems)
   (let (systems) 
@@ -58,8 +60,8 @@
     (setf (gethash sys reverse-deps-hash) nil))
   (dolist (sys all-systems)
     ;(print (list 'outer sys))
-    (dolist (dep (append (system-depends-on sys :as-systems t :defsystem-depends-on t)
-                         (system-depends-on sys :as-systems t :defsystem-depends-on nil)))
+    (dolist (dep (append (get-system-depends-on sys :as-systems t :defsystem-depends-on t)
+                         (get-system-depends-on sys :as-systems t :defsystem-depends-on nil)))
       ;(print (list 'inner (list sys dep)))
       (setf (gethash dep reverse-deps-hash) (let ((cur-reverse-deps (gethash dep reverse-deps-hash)))
                                (if (member sys cur-reverse-deps)
@@ -158,13 +160,18 @@
        (details-long-description display-pane
                             :title "Long description:"
                             :title-position :left
+                            :vertical-scroll t
+                            ;:background (slot-value (capi::titled-pane-title-pane (slot-value *lisp-world-viewer-window* 'details-long-description))
+                            ;                        'capi::background)
                             )
 
        )
       (:layouts
        (col-deps-details column-layout '(row-asdf-deps details-layout))
-       (row-asdf-deps row-layout '(sys-deps sys-req-for))
+       (row-asdf-deps row-layout '(sys-deps sys-req-for)
+                      :visible-min-height 300)
        (details-layout column-layout '(details-description details-long-description))
+;                       :visible-max-height 100)
 
        )
       (:default-initargs :title "ASDF-systems"
@@ -172,6 +179,7 @@
        :visible-min-height 600
        ))
     (display (setf *lisp-world-viewer-window* (make-instance 'lisp-world-viewer))))
+  ;;Uncommented for run viewer after system loaded
   ;(define-lisp-world-viewer-and-show)
   )
 
