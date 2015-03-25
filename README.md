@@ -18,7 +18,7 @@
  2. Добавить путь в ASDF, загрузить систему, вызвать диалог
     приложения (это заскриптовано в run.lisp):
 
-```common-lisp
+``` common-lisp
 CL-USER: (push <путь_к_директории_lisp-world-viewer> asdf:*central-registry*)
 CL-USER: (asdf:load-system :lisp-world-viewer)
 CL-USER: (asdf-viewer:define-lisp-world-viewer-and-show)
